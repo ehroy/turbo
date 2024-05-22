@@ -5,7 +5,7 @@ const sleep = require("delay");
     let dataTurbo;
     let smsasu;
     let otpCodeTurbo;
-    const sms = new TURBO("c657c69a4cdde52eecc8feeb6f9a886b");
+    const sms = new TURBO("");
 
     do {
       try {
