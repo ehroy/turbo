@@ -3,6 +3,7 @@ const sleep = require("delay");
 const inquirer = require("inquirer");
 (async () => {
   let choicess = [];
+  let validated;
   const sms = new TURBO("c657c69a4cdde52eecc8feeb6f9a886b");
   const services = await sms.GetServis();
   services.data.data.forEach(async (element, index) => {
@@ -37,6 +38,7 @@ const inquirer = require("inquirer");
     let dataTurbo;
     let smsasu;
     let otpCodeTurbo;
+    let jumlah;
 
     do {
       try {
@@ -55,6 +57,7 @@ const inquirer = require("inquirer");
     console.log("succes get number", number, "order id", id);
     console.log("Try get message");
     let count = 0;
+
     try {
       do {
         try {
@@ -68,6 +71,7 @@ const inquirer = require("inquirer");
         } catch (error) {
           break;
         }
+        process.stdout.write(otpCodeTurbo.data.data[0].sms + "\r");
         process.stdout.write(`Waiting Otp [ ${count} second ]...\r`);
       } while (
         otpCodeTurbo.data.data[0].sms === null ||
@@ -90,9 +94,52 @@ const inquirer = require("inquirer");
         console.log("Message =>", parse[0].sms);
       } catch (error) {
         await sms.GetCancel(id);
-        console.log(error);
+        console.log(error.toString());
         console.log("Cancel Phone Number");
+        continue;
       }
     }
+    let again = 1;
+    let counts = 0;
+    let parses;
+    do {
+      jumlah = await inquirer
+        .prompt([
+          {
+            type: "input",
+            name: "selected",
+            message: "resend again otp y or t ? ",
+          },
+        ])
+        .then((answers) => {
+          return answers.selected;
+        });
+      if (jumlah.toLowerCase() === "y") {
+        again++;
+        do {
+          try {
+            otpCodeTurbo = await sms.GetMessage(id);
+
+            if (counts === 60) {
+              await sms.GetCancel(id);
+            }
+            await sleep(1000);
+            counts++;
+          } catch (error) {
+            break;
+          }
+          parses = JSON.parse(otpCodeTurbo.data.data[0].sms);
+          if (!parses[again]) {
+            console.log("Message =>", parses[again].sms);
+          } else {
+            process.stdout.write(`Waiting Otp [ ${counts} second ]...\r`);
+          }
+        } while (!parses[again]);
+
+        counts = 0;
+      } else {
+        jumlah = "t";
+      }
+    } while (jumlah === "y" || !jumlah);
   }
 })();
